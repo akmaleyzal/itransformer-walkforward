@@ -1,0 +1,5 @@
+# Kept byte for byte, no line-ending conversion: the upstream copies are checked
+# against pinned sha256, and so are the Stage 1 data artifacts.
+tests/fixtures/thuml_iTransformer_c2426e68/** -text
+src/itransformer_btc/vendor/** -text
+data/raw/** -text

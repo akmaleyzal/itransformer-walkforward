@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ipynb_checkpoints/
+.venv/
+.tmp/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+kaggle.json
+.jupyter-token
+
+# Third-party documents are never committed: no papers, books or their
+# renderings. Cite them by DOI in docs/DESIGN.md instead.
+*.pdf
+*.epub
+*.djvu
+paper/references/
+
+# Per-run outputs; meta/*.json carries their sha256.
+**/artifacts/preds/
+**/artifacts/attn/
+**/artifacts/weights/
+**/artifacts/checkpoints/
+**/artifacts/validation/
+/artifacts/
+*.png

@@ -1,0 +1,95 @@
+{
+  "symbol": "BTCUSDT",
+  "interval": "1h",
+  "requested_start_utc": "2018-01-01T00:00:00+00:00",
+  "requested_end_utc_exclusive": "2026-08-01T00:00:00+00:00",
+  "actual_first_bar_utc": "2018-01-01T00:00:00+00:00",
+  "actual_last_bar_utc": "2026-07-31T23:00:00+00:00",
+  "bars_expected": 75216,
+  "bars_actual": 75094,
+  "coverage_pct": 99.8378,
+  "missing_bars": 122,
+  "gap_blocks": 27,
+  "largest_gap_bars": 33,
+  "duplicate_timestamps": 0,
+  "monotonic_index": true,
+  "null_counts": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "volume": 0,
+    "close_time": 0,
+    "quote_volume": 0,
+    "trades": 0,
+    "taker_buy_base": 0,
+    "taker_buy_quote": 0
+  },
+  "option_a_columns_complete": {
+    "open": true,
+    "high": true,
+    "low": true,
+    "close": true,
+    "volume": true,
+    "quote_volume": true,
+    "trades": true,
+    "taker_buy_base": true
+  },
+  "ohlc_violations": 0,
+  "taker_buy_exceeds_volume": 0,
+  "zero_volume_bars": 3,
+  "zero_trade_bars": 3,
+  "per_year_coverage": {
+    "2018": {
+      "bars": 8698,
+      "expected": 8760,
+      "coverage_pct": 99.292
+    },
+    "2019": {
+      "bars": 8732,
+      "expected": 8760,
+      "coverage_pct": 99.68
+    },
+    "2020": {
+      "bars": 8766,
+      "expected": 8784,
+      "coverage_pct": 99.795
+    },
+    "2021": {
+      "bars": 8747,
+      "expected": 8760,
+      "coverage_pct": 99.852
+    },
+    "2022": {
+      "bars": 8760,
+      "expected": 8760,
+      "coverage_pct": 100.0
+    },
+    "2023": {
+      "bars": 8759,
+      "expected": 8760,
+      "coverage_pct": 99.989
+    },
+    "2024": {
+      "bars": 8784,
+      "expected": 8784,
+      "coverage_pct": 100.0
+    },
+    "2025": {
+      "bars": 8760,
+      "expected": 8760,
+      "coverage_pct": 100.0
+    },
+    "2026": {
+      "bars": 5088,
+      "expected": 5088,
+      "coverage_pct": 100.0
+    }
+  },
+  "generated_at_utc": "2026-08-06T06:38:51.814789+00:00",
+  "artifact_sha256": {
+    "BTCUSDT_1h.parquet": "8270a84b07c2923bc885782a8ba4e1898133d18ee3b260f157fcee3fd6923b4e",
+    "BTCUSDT_1h_gaps.csv": "cfab4cf4c20ec00defbc11b94e56facf65549eeef7aef1a42084e3b3e1d70462",
+    "BTCUSDT_1h_raw.jsonl": "30721a663bd2ce58ac21132104b663e0928e68c83ec7f77c29d2c66d1c8d256a"
+  }
+}

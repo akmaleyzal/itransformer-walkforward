@@ -1,0 +1,71 @@
+[project]
+name = "itransformer-walkforward"
+version = "0.1.0"
+description = "Walk-forward comparison of iTransformer, Ridge and a vanilla Transformer on hourly Bitcoin returns"
+readme = "README.md"
+license = "MIT"
+
+# Kaggle's image is the environment that matters for the grid; 3.11 is the floor
+# the code needs. No upper bound, which would fight the Kaggle image.
+requires-python = ">=3.11"
+
+# The data plane, and nothing else.
+dependencies = [
+    "polars>=1.0",
+    "pyarrow>=15.0",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+# Stage 1 ingest only (spot_klines_btc.py). pandas is allowed there because the
+# script computes no rolling window; keeping it behind an extra keeps that
+# exemption visible.
+ingest = [
+    "requests>=2.31",
+    "pandas>=2.2",
+]
+
+# The one named boundary where data may leave polars. Every library here accepts
+# numpy or pandas and nothing else:
+#   statsmodels   ADF, panel regression scaffolding
+#   arch          Lo-MacKinlay VarianceRatio
+#   wildboottest  restricted wild cluster bootstrap, impose_null=True
+#   scipy         Clark-West, Diebold-Mariano with HLN, Pesaran-Timmermann
+stats = [
+    "pandas>=2.2",
+    "scipy>=1.11",
+    "statsmodels>=0.14",
+    "arch>=7.0",
+    "wildboottest>=0.3",
+]
+
+# Unpinned and not installed on Kaggle: the image ships its own torch and
+# scikit-learn. This extra makes a local CPU smoke run possible before anything is
+# uploaded. scikit-learn fits the ridge comparator.
+train = [
+    "torch>=2.2",
+    "scikit-learn>=1.4",
+]
+
+# Figures only. The Kaggle image ships matplotlib.
+plot = [
+    "matplotlib>=3.8",
+]
+
+# ipython: the notebook test writes the upstream copies through IPython's own
+# cell transformer, as a Kaggle %%writefile cell does.
+dev = [
+    "pytest>=8.0",
+    "ipython>=8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/itransformer_btc"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
