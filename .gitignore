@@ -35,3 +35,7 @@ paper/references/
 **/artifacts/validation/
 /artifacts/
 *.png
+
+# Kaggle session logs and downloaded session outputs stay local.
+notebooks/logs*.txt
+notebooks/outputs/*
