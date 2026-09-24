@@ -775,7 +775,8 @@ else:
     print(f"\ndesign digest {design_digest()}")
 '''
 
-CODE_GRID = r'''DESIGN_FREEZE_SHA256 = None  # the design digest printed by the pilot, once the design is frozen
+CODE_GRID = r'''# Frozen 2026-09-24 from the validation-only pilot (docs/DESIGN.md, "Design freeze").
+DESIGN_FREEZE_SHA256 = "9f2435aefac51199e6906f68ac7c3952d9bcc1638fe39873cb04f01c0b1ad7db"
 
 for _name in ("probe", "plumb", "xs", "ys", "opt", "loss"):
     globals().pop(_name, None)

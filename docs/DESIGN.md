@@ -70,7 +70,7 @@ All three models see the same windows, the same scaler and the same 11,500 train
 
 **`itr`**: `Linear(96→128)` embeds each variate's whole lookback as one token; attention runs over the K variate tokens; `Linear(128→24)` is read at the target channel. `use_norm=True` (per-window instance normalisation with a detached mean) is part of the architecture, not a tuning knob.
 
-**`rdg`**: scikit-learn `Ridge(fit_intercept=True, solver="cholesky")` in float64, from the flattened `K·96` lookback to 24 outputs. α is chosen on validation MSE from `RIDGE_ALPHAS` (1e-1 … 1e6), the only selected hyperparameter in the study. The solve is closed-form on a fixed sample, so the five seeds give identical predictions; they are kept for a symmetric run manifest and reported as seed std = 0.
+**`rdg`**: scikit-learn `Ridge(fit_intercept=True, solver="cholesky")` in float64, from the flattened `K·96` lookback to 24 outputs. α is chosen on validation MSE from the eight values 1e-1, 1e0, …, 1e6 (`RIDGE_ALPHAS` in `baselines.py`), the only selected hyperparameter in the study. The solve is closed-form on a fixed sample, so the five seeds give identical predictions; they are kept for a symmetric run manifest and reported as seed std = 0.
 
 **`vtr`**: Conv1d token embedding with sinusoidal positional encoding (no calendar marks); 2 encoder and 1 decoder layers; the decoder reads the last 48 lookback hours plus 24 zero placeholders under a causal mask and emits all 24 hours in one pass; `Linear(128→K)` read at the target channel; no instance normalisation.
 
@@ -81,6 +81,7 @@ All three models see the same windows, the same scaler and the same 11,500 train
 | Activation | GELU | GELU |
 | Parameters (K = 1/4/8/12) | 280,728 at every K | 466,177 / 468,868 / 472,456 / 476,044 |
 | Schedule | Adam, lr 1e-4 halved every 4 epochs, batch 32, ≤ 30 epochs, patience 5 on validation MSE | same |
+| Precision | float32, no mixed precision | float32, no mixed precision |
 
 - Hyperparameters follow Liu et al. (2024) except `d_model` 512 → 128 for the sample size, identical at every rung.
 - `vtr` settings (2 + 1 layers, GELU, `label_len` 48) are the defaults of the official `run.py` in the iTransformer code base and the related long-horizon forecasting code bases.
@@ -149,7 +150,7 @@ Leakage checks (F = fatal, each backed by a test or a notebook assertion):
 
 ## 7. Inference
 
-All inference is exploratory. Origins share training data, and a multiplicity correction does not repair unmodelled dependence.
+All inference is exploratory. Origins share training data, and a multiplicity correction does not repair unmodelled dependence. Every bootstrap (Romano–Wolf, the Model Confidence Set, the wild cluster bootstrap) uses B = 9,999 draws with seed 42, so the smallest attainable p is 1/10,000.
 
 - **Diebold–Mariano** (1995) per (origin, block): T ≈ 720, h = 24, rectangular long-run variance truncated at lag h − 1 (Bartlett fallback if the variance is not positive, reported). The Harvey–Leybourne–Newbold (1997) correction is applied against t(T−1), and T is printed beside every p. `d_t` is never concatenated across origins.
 - **Clark–West** (2007) is run only against naive-RW, the one true nesting, as a diagnostic. The K ladder is not assumed nested, and a positive CW can sit beside a negative `R²_oos`.
@@ -216,6 +217,25 @@ All inference is exploratory. Origins share training data, and a multiplicity co
 - Tashman, L. J. (2000). Out-of-sample tests of forecasting accuracy: An analysis and review. *International Journal of Forecasting*. https://doi.org/10.1016/S0169-2070(00)00065-0
 - Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). Attention is all you need. NeurIPS. arXiv:1706.03762
 - Zeng, A., Chen, M., Zhang, L., & Xu, Q. (2023). Are Transformers effective for time series forecasting? AAAI. https://doi.org/10.1609/aaai.v37i9.26317
+
+## Design freeze
+
+Frozen on 2026-09-24, after the validation-only pilot and before any test block was scored.
+
+| Item | Value |
+|---|---|
+| Design digest (code digest and the 900 run IDs) | `9f2435aefac51199e6906f68ac7c3952d9bcc1638fe39873cb04f01c0b1ad7db` |
+| Code digest (`code_sha256`, package and upstream copies) | `5a23e2725b00005c0870e7b3e4fc69f94125277e9492ff2d660db2208c207116` |
+| Input digest (`BTCUSDT_1h.parquet`) | `8270a84b07c2923bc885782a8ba4e1898133d18ee3b260f157fcee3fd6923b4e` |
+| Upstream | `thuml/iTransformer` @ `c2426e68ca13f74aaec08045c5c724d8ad328124` |
+| Pilot environment | Kaggle, 2 × Tesla T4 (sm_75), torch 2.10.0+cu128, polars 1.35.2, numpy 2.0.2 |
+| Pilot cost, mean wall time per run | `itr` 40.2 s, `rdg` 2.5 s, `vtr` 49.0 s |
+| Projected grid cost | `itr` 3.35, `rdg` 0.21, `vtr` 4.08 GPU-hours; about 3.8 h of wall-clock time on two T4s |
+
+- The pilot fitted each model at every K on origin 1's training sub-block with seed 42 and scored the validation sub-block only; no test prediction exists from it. It checks that every validation loss is finite and measures cost. Its validation errors are not a basis for any choice: no setting changed after it, and no hyperparameter search precedes the grid; the ridge α chosen on validation is the only selection in the study.
+- The notebook's grid step pins this digest as `DESIGN_FREEZE_SHA256` and refuses to train when the code produces another; `tests/test_notebook.py` fails when the committed code no longer produces it.
+- No notebook cell is edited until the grid is complete. Between sessions only the operator fields of the setup cell change (`WEEKLY_GPU_HOURS_REMAINING`, `SESSION_ALREADY_USED_H`). An unavoidable fix makes a new code vintage: re-run the pilot, freeze again, and record it below.
+- All 5 seeds, 15 origins and 6 test blocks are reported. No run is dropped or rerun silently, and every session's log is kept.
 
 ## Changes after the design freeze
 

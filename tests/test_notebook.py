@@ -217,9 +217,14 @@ def test_the_pilot_and_the_grid_use_every_visible_device(notebook: dict) -> None
     assert "devices=DEVICES" in grid and "guard=SESSION_GUARD" in grid
 
 
-def test_the_grid_waits_for_a_frozen_design(notebook: dict) -> None:
+def test_the_grid_is_frozen_on_the_committed_design(notebook: dict) -> None:
+    """The pinned digest is the one this code produces: a code change after the freeze fails here."""
+    from itransformer_btc.runner import design_digest
+
     grid = _steps(notebook)["grid"][1]
-    assert re.search(r"^DESIGN_FREEZE_SHA256 = None", grid, re.M)
+    pinned = re.search(r'^DESIGN_FREEZE_SHA256 = "([0-9a-f]{64})"$', grid, re.M)
+    assert pinned, "the grid step must pin the frozen design digest"
+    assert pinned.group(1) == design_digest()
     assert "require_frozen_design(DESIGN_FREEZE_SHA256" in grid
     assert "resume_check(ALL, roots, ARTIFACTS)" in grid
 
@@ -403,8 +408,8 @@ def executed(notebook: dict, tmp_path_factory):
     """Every cell but setup and sync, in one namespace, with ANALYSIS_ONLY on the CPU.
 
     The setup cell's values are supplied as it would bind them; vendor cells are
-    written as ``%%writefile`` writes them. Training and analysis stay behind their
-    gates, which is the path a first Kaggle session takes up to the grid.
+    written as ``%%writefile`` writes them. ANALYSIS_ONLY skips the pilot and keeps the
+    frozen grid from training, and analysis waits for a complete grid.
     """
     pytest.importorskip("torch")
     if not PARQUET.exists():
@@ -452,13 +457,15 @@ def executed(notebook: dict, tmp_path_factory):
     return namespace, work
 
 
-def test_the_steps_run_on_the_real_input_up_to_the_frozen_design_gate(executed, generator) -> None:
+def test_the_steps_run_on_the_real_input_through_the_frozen_design_gate(executed, generator) -> None:
     namespace, work = executed
     assert set(namespace["UPSTREAM"]) == {"itr", "vtr"}
     assert namespace["code_sha256"]() == generator.package_digest()
     assert namespace["naive"].height == 15
     assert (work / "artifacts" / "keff_table.parquet").exists()
-    assert namespace["FROZEN_DESIGN"] is None and namespace["GRID_COMPLETE"] is False
+    # The gate opens, and ANALYSIS_ONLY keeps the grid from training.
+    assert namespace["FROZEN_DESIGN"] == namespace["DESIGN_FREEZE_SHA256"]
+    assert namespace["GRID_COMPLETE"] is False and namespace["summary"] is None
     status = json.loads((work / "artifacts" / "session_status.json").read_text(encoding="utf-8"))
-    assert status["design_frozen"] is False and len(status["pending_run_ids"]) == 900
+    assert status["design_frozen"] is True and len(status["pending_run_ids"]) == 900
     assert status["design_digest"] == namespace["design_digest"]()
