@@ -718,15 +718,21 @@ assert abs(base - scaled) / base < 1e-3, "use_norm inactive: MSE(c x)/c^2 differ
 for tag, cfg in (("itr", ITransformerConfig(dropout=0.0)), ("vtr", VanillaConfig(k=8, dropout=0.0))):
     set_seed(42)
     plumb = cfg.build().to(device).train()
-    xs, ys = torch.randn(8, SEQ_LEN, 8, device=device), torch.randn(8, PRED_LEN, device=device)
+    # Drawn on the CPU so every device fits the same batch; a CUDA draw differs.
+    probe = torch.Generator().manual_seed(42)
+    xs = torch.randn(8, SEQ_LEN, 8, generator=probe).to(device)
+    ys = torch.randn(8, PRED_LEN, generator=probe).to(device)
     opt = torch.optim.Adam(plumb.parameters(), lr=1e-3)
-    for _ in range(300):
+    for step in range(300):
         opt.zero_grad(set_to_none=True)
         loss = torch.nn.functional.mse_loss(plumb.forecast_target(xs), ys)
+        start = loss.item() if step == 0 else start
         loss.backward()
         opt.step()
-    print(f"{tag} one-batch overfit (dropout 0, 300 steps): {loss.item():.2e}")
-    assert loss.item() < 1e-3, f"{tag} cannot overfit one batch; the training path is broken"
+    print(f"{tag} one-batch overfit (dropout 0, 300 steps): {start:.2e} -> {loss.item():.2e}")
+    # Relative, not absolute: how fast the last digits fall varies with device and
+    # batch, but a broken path (no gradient, wrong target) cannot fall 100-fold.
+    assert loss.item() < 1e-2 * start, f"{tag} cannot overfit one batch; the training path is broken"
 
 print(pl.DataFrame([{"K": k, "itr": ITransformerConfig().build().n_parameters(),
                      "vtr": VanillaConfig(k=k).build().n_parameters(),

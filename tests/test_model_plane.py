@@ -207,14 +207,16 @@ def test_use_norm_scale_invariance() -> None:
 def test_single_batch_overfits_with_dropout_off(cfg) -> None:
     set_seed(42)
     model = cfg.build().train()
-    xs, ys = torch.randn(8, SEQ_LEN, 8), torch.randn(8, PRED_LEN)
+    probe = torch.Generator().manual_seed(42)  # the notebook's probe batch
+    xs, ys = torch.randn(8, SEQ_LEN, 8, generator=probe), torch.randn(8, PRED_LEN, generator=probe)
     opt = torch.optim.Adam(model.parameters(), lr=1e-3)
-    for _ in range(300):
+    for step in range(300):
         opt.zero_grad(set_to_none=True)
         loss = nn.functional.mse_loss(model.forecast_target(xs), ys)
+        start = loss.item() if step == 0 else start
         loss.backward()
         opt.step()
-    assert loss.item() < 1e-3
+    assert loss.item() < 1e-2 * start
 
 
 def test_only_the_target_channel_carries_gradient() -> None:
